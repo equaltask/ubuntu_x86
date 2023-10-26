@@ -1,0 +1,30 @@
+{
+    "common": {
+        "#os_type":         "server or desktop",
+        "os_type":          "server",
+
+        "#ubuntu_type":     "jammy(22.04) or mantic(23.10)",
+        "ubuntu_type":      "jammy",
+
+        "#kernel_version":  "version defined in https://kernel.ubuntu.com/mainline/",
+        "kernel_version":   "5.17",
+
+        "#timezone":        "command 'timedatectl list-timezones' to get all supported timezones and select one of them",
+        "timezone":         "Asia/Shanghai",
+
+        "default_user":     "ubuntu",
+        "default_password": "123",
+        "hostname":         "fwk-phoenix-100",
+        "grub_cmd_default": "rootdelay=90 biosdevname=0 net.ifnames=0 consoleblank=0 noexec=off noexec32=off nosmap nosmep earlyprintk=serial,0x2E8,115200,keep iommu=off nomodeset nokaslr mem=4G",
+
+        "add_disksize":     1500
+    },
+
+    "server": {
+        "package": "net-tools gcc g++ gdb"
+    },
+
+    "desktop": {
+        "package": "net-tools gcc g++ gdb"
+    }
+}
