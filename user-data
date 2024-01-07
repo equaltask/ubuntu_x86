@@ -1,0 +1,48 @@
+#cloud-config
+autoinstall:
+  version: 1
+  early-commands:
+    - ['cat', '/autoinstall.yaml']
+  refresh-installer:
+    update: no
+  identity:
+    hostname: ubuntu-server
+    username: ubuntu
+    realname: ubuntu
+    #password: 123. with 'openssl passwd -6 -stdin' to get password string
+    password: "$6$.AUfut96JxGL/fEz$BBMXeczgJXs3v9bcOFLthGu275IFgyIZcPvzvRKscpc9G40olb.qa2Svaln.sn9iGWMuq/TQeb8nz2xB7dwJ51"
+  keyboard: {layout: us, toggle: null, variant: ''}
+  network:
+    ethernets:
+      enp0s3: {dhcp4: true}
+      enp2s0: {dhcp4: true}
+    version: 2
+  ssh:
+    allow-pw: true
+    authorized-keys: []
+    install-server: true
+  packages:
+    - vim
+    - htop
+    - curl
+    - wget
+    - unzip
+  storage:
+    config:
+      - {ptable: gpt, path: /dev/vda, wipe: superblock,
+         preserve: false, name: '', grub_device: true, type: disk, id: disk-sda}
+      - {device: disk-sda, size: 1MB, flag: bios_grub, number: 1, preserve: false,
+         grub_device: false, type: partition, id: partition-0}
+      - {device: disk-sda, size: 256MB, wipe: superblock, flag: '', number: 2,
+         preserve: false, grub_device: false, type: partition, id: partition-1}
+      - {fstype: fat32, volume: partition-1, preserve: false, type: format, id: format-0}
+      - {device: disk-sda, size: -1, wipe: superblock, flag: '', number: 3,
+         preserve: false, grub_device: false, type: partition, id: partition-2}
+      - {fstype: ext4, volume: partition-2, preserve: false, type: format, id: format-1}
+      - {device: format-1, path: /, type: mount, id: mount-1}
+      - {device: format-0, path: /boot/efi, type: mount, id: mount-0}
+  late-commands:
+      - curtin in-target -- apt-get install -y grub-efi-amd64
+      - curtin in-target -- grub-install --target=x86_64-efi --efi-directory=/boot/efi --recheck
+      - curtin in-target -- grub-mkconfig -o /boot/grub/grub.cfg
+      - curtin in-target -- update-grub
