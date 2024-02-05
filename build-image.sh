@@ -107,13 +107,13 @@ function init_build_param()
 
     #install required packages
     local pkgName=$(dpkg-query -s qemu-system-x86 |grep install)
-    [ -z "$pkgName" ] && apt-get install qemu-system-x86
+    [ -z "$pkgName" ] && apt-get install -y qemu-system-x86
     pkgName=$(dpkg-query -s kpartx |grep install)
-    [ -z "$pkgName" ] && apt-get install kpartx
+    [ -z "$pkgName" ] && apt-get install -y kpartx
     pkgName=$(dpkg-query -s gparted |grep install)
-    [ -z "$pkgName" ] && apt-get install gparted
+    [ -z "$pkgName" ] && apt-get install -y gparted
     pkgName=$(dpkg-query -s cloud-image-utils |grep install)
-    [ -z "$pkgName" ] && apt-get install cloud-image-utils
+    [ -z "$pkgName" ] && apt-get install -y cloud-image-utils
 }
 
 function init_image_env()
@@ -247,7 +247,7 @@ function configure_ubuntu()
 {
     #install customized package
     chroot_command "apt-get clean"
-    chroot_command "apt-get install $ParamPackage"
+    chroot_command "apt-get install -y $ParamPackage"
     chroot_command "apt-get clean"
 
     echo "set root and default user with passwd ..."
