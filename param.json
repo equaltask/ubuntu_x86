@@ -19,6 +19,6 @@
     },
 
     "server": {
-        "package": "net-tools gcc g++ gdb"
+        "package": "net-tools gcc g++ cgdb jq cmake git"
     }
 }

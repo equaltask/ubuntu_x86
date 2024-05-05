@@ -13,12 +13,13 @@ ImageFile=ubuntu.img
 function help_usage()
 {
     echo "command guide:"
-    echo "  build-image.sh -f filename -a -b -u 1/0 -r -h"
+    echo "  build-image.sh -f filename -a -b -u 1/0 -r -ku 5.17 -h"
     echo "    -f|--file:          preinstalled(.img.xz)/install(.iso)/image(.img) file"
     echo "    -b|--build:         build ubuntu image"
     echo "    -a|--add_size:      add size for preinstalled image"
     echo "    -u|--rootfs_update: rootfs update manually. 1-mount rootfs, 0-umount rootfs"
     echo "    -r|--run:           run image with qemu"
+    echo "    -ku|--kernel_local: update local kernel version"
     echo "    -h|--help:          help"
     echo #empty line
     echo "modify parameters defined in param.json before run with root"
@@ -27,7 +28,7 @@ function help_usage()
     echo "recommanded disk size: server-5.5G(5500), desktop-15.7G(15700). modify it in param.json"
     echo "img.xz/iso file download path:"
     echo "    https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-preinstalled/current"
-    echo "    https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/"
+    echo "    https://releases.ubuntu.com/22.04.4/"
     echo #empty line
 }
 
@@ -75,6 +76,9 @@ function init_build_param()
 {
     local jsonfile=param.json
 
+    local pkgName=$(dpkg-query -s jq |grep install)
+    [ -z "$pkgName" ] && apt-get install -y jq
+
     ParamOsType=$(jq -r -c .common.os_type $jsonfile)
     [[ $ParamOsType == "null" ]] && exit_with_error "os_type is not set in $jsonfile"
 
@@ -106,7 +110,7 @@ function init_build_param()
     [ ! -d $RootfsPath ] && mkdir -p $RootfsPath
 
     #install required packages
-    local pkgName=$(dpkg-query -s qemu-system-x86 |grep install)
+    pkgName=$(dpkg-query -s qemu-system-x86 |grep install)
     [ -z "$pkgName" ] && apt-get install -y qemu-system-x86
     pkgName=$(dpkg-query -s kpartx |grep install)
     [ -z "$pkgName" ] && apt-get install -y kpartx
@@ -175,6 +179,7 @@ function update_kernel()
 {
     #when no kernel verison defined, skip
     if [ -z $ParamKernelVersion ]; then
+        echo "kernel version is not set"
         return
     fi
 
@@ -204,9 +209,17 @@ function update_kernel()
     [ -f $DownloadPath/index.html ] && rm -f $DownloadPath/index.html
 
     #install kernel
-    chroot_command "dpkg -i /opt/download/*.deb"
-    chroot_command "apt-get clean"
-    chroot_command "update-grub"
+    if [ $1 -eq 0 ]; then #image kernel
+        echo "update image kernel to version v$ParamKernelVersion"
+        chroot_command "dpkg -i /opt/download/*.deb"
+        chroot_command "apt-get clean"
+        chroot_command "update-grub"
+    else #local kernel
+        echo "update local kernel to version v$ParamKernelVersion"
+        dpkg -i $DownloadPath/*.deb
+        apt-get clean
+        update-grub
+    fi
 }
 
 function configure_os_image()
@@ -343,6 +356,8 @@ function install_iso_image()
         -drive file=$ImageFile,format=raw,cache=none,if=virtio \
         -drive file=$SeedFile,format=raw,cache=none,if=virtio \
         -cdrom $IsoFileName
+
+    [ -f $MetaDataFile ] && rm -f $MetaDataFile
 }
 
 function build_image()
@@ -359,7 +374,8 @@ function build_image()
 
     init_image_env
     configure_ubuntu
-    update_kernel
+    #update image kernel
+    update_kernel 0
     close_image_env
     echo "end of building ubuntu!"
 }
@@ -387,6 +403,12 @@ while [[ $# -gt 0 ]]; do
         -r|--run)          #run installed image with qemu
             kvm -no-reboot -m 2048 -drive file=$ImageFile,format=raw,cache=none,if=virtio
             shift
+            ;;
+        -ku|--kernel_local)
+            ParamKernelVersion=$2
+            #update local kernel
+            update_kernel 1
+            shift 2
             ;;
         *)
             build_image
