@@ -27,3 +27,5 @@ ubuntu-*-cloudimg-console.log
 *.orig
 *.img*
 *.iso
+*temp*
+meta*

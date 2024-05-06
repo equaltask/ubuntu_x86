@@ -108,9 +108,12 @@ function init_build_param()
 
     #create temp directory
     [ ! -d $RootfsPath ] && mkdir -p $RootfsPath
+}
 
+function init_image_env()
+{
     #install required packages
-    pkgName=$(dpkg-query -s qemu-system-x86 |grep install)
+    local pkgName=$(dpkg-query -s qemu-system-x86 |grep install)
     [ -z "$pkgName" ] && apt-get install -y qemu-system-x86
     pkgName=$(dpkg-query -s kpartx |grep install)
     [ -z "$pkgName" ] && apt-get install -y kpartx
@@ -118,10 +121,7 @@ function init_build_param()
     [ -z "$pkgName" ] && apt-get install -y gparted
     pkgName=$(dpkg-query -s cloud-image-utils |grep install)
     [ -z "$pkgName" ] && apt-get install -y cloud-image-utils
-}
 
-function init_image_env()
-{
     [ ! -f $ImageFile ] && exit_with_error "ubuntu preinstalled image is not exist. please download it"
 
     local loopdev=$(losetup -f)     #get available loop device
@@ -358,6 +358,7 @@ function install_iso_image()
         -cdrom $IsoFileName
 
     [ -f $MetaDataFile ] && rm -f $MetaDataFile
+    [ -f $SeedFile ] && rm -f $SeedFile
 }
 
 function build_image()

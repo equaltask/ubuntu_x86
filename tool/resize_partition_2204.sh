@@ -41,7 +41,7 @@ fi
 
 memsize=$(free -m | grep Mem: | awk '{print $2}')
 echo "memsize=$memsize MB" >> $LOG_FILE
-swapsize=3200
+swapsize=7800   #Mero has 32GB of memory.  We do not need more than 7.3GB of swap space.  Besides, swap is never used on an NVMe!
 echo "swapsize=$swapsize MB" >> $LOG_FILE
 #The swap parition must land on a sector divisible by 8 for maximum performance!
 #Therefore, I need to increase swapsize by 1 (which is swapsize2) since we are doing -${swapsize} below.
