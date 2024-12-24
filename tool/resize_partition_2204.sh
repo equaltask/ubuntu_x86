@@ -24,24 +24,27 @@ fi
 LOG_FILE=resize_partition.log
 UEFI_PATH=/sys/firmware/efi
 
-#rootfs disk. such as /dev/sda2 or /dev/nvme0n1p2
-rootfsDisk=$(df -h / | grep dev | awk '{print $1}')
+#rootfs disk. such as /dev/sda2 or /dev/nvme0n1p2 or /dev/md126p2
+#first line in /dev. bug?
+rootfsDisk=$(df -h / | grep dev | awk '(NR==1){print $1}')
+if [ -z "$rootfsDisk" ]; then
+    echo "not found rootfs disk. Please check manually"
+    exit 1
+fi
+
 #rootfs disk id. for parted parameter
 rootfsDiskId=${rootfsDisk: -1}
 
-#from rootfs disk name to get boot disk name (/dev/sda or /dev/nvme0n1)
-if [[ "$rootfsDisk" =~ "nvme" ]]; then #remove p2
-    bootDisk=${rootfsDisk%p*}
-elif [[ "$rootfsDisk" =~ "sd" ]]; then #remove last char 2
+#from rootfs disk name to get boot disk name (/dev/sda or /dev/nvme0n1 or /dev/md126)
+if [[ "$rootfsDisk" =~ "sd" ]]; then #remove last char 2
     bootDisk=${rootfsDisk%?}
-else
-    echo "rootfs_disk $rootfsDisk not support. Please resize manually!"
-    exit
+else #remove p2
+    bootDisk=${rootfsDisk%p*}
 fi
 
 memsize=$(free -m | grep Mem: | awk '{print $2}')
 echo "memsize=$memsize MB" >> $LOG_FILE
-swapsize=7800   #Mero has 32GB of memory.  We do not need more than 7.3GB of swap space.  Besides, swap is never used on an NVMe!
+swapsize=7800   # We do not need more than 7.3GB of swap space.  Besides, swap is never used on an NVMe!
 echo "swapsize=$swapsize MB" >> $LOG_FILE
 #The swap parition must land on a sector divisible by 8 for maximum performance!
 #Therefore, I need to increase swapsize by 1 (which is swapsize2) since we are doing -${swapsize} below.
@@ -98,7 +101,7 @@ set_grub_config()
 
   if [ $vendor_detect == "AuthenticAMD" ]; then
     opts_tmp="$CFG_GRUB_DEFAULT_OPTS_AMD $CFG_GRUB_DEBUG_OPTS $CFG_GRUB_ALT_OPTS_AMD "
-    #set the mem=6144 for MVG.  Mero has 32GB of memory.  Should be plenty of room for tserver beyond the 6144MiB!
+    # Should be plenty of room for tserver beyond the 6144MiB!
     opts="$CFG_GRUB_DEFAULT_OPTS_AMD $CFG_GRUB_DEBUG_OPTS $CFG_GRUB_ALT_OPTS_AMD mem=6144M"
   elif [ $vendor_detect == "GenuineIntel" ]; then
     opts_tmp="$CFG_GRUB_DEFAULT_OPTS_INTEL $CFG_GRUB_ALT_OPTS_INTEL "

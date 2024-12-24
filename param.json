@@ -7,7 +7,7 @@
         "ubuntu_type":      "jammy",
 
         "#kernel_version":  "version defined in https://kernel.ubuntu.com/mainline/",
-        "kernel_version":   "5.17",
+        "kernel_version":   "",
 
         "default_user":     "ubuntu",
         "default_password": "123",
